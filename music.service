@@ -1,0 +1,11 @@
+[Unit]
+Description=Unit to run python script for play music
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/AlarmClock/music.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
