@@ -54,68 +54,72 @@ while run_service.is_set():
     hour = date.hour
     minute = date.minute
 
-    if hour == 6 and minute == 0:
-        dirs = listdir(start_path)
-        count_dirs = len(dirs)
-        number_dir = randint(0, count_dirs - 1)
-        dir = dirs[number_dir]
-        log.info(dir)
+    try:
+        if (hour == 5 and minute >= 30) or (6 <= hour < 22):
+            dirs = listdir(start_path)
+            count_dirs = len(dirs)
+            number_dir = randint(0, count_dirs - 1)
+            dir = dirs[number_dir]
+            log.info(dir)
 
-        music_dir_path = None
-        files = None
-        count_files = None
+            music_dir_path = None
+            files = None
+            count_files = None
 
-        dir_found = False
+            dir_found = False
 
-        for i in range(5):
-            music_dir_path = path.join(start_path, dir)
+            for i in range(5):
+                music_dir_path = path.join(start_path, dir)
 
-            files = next(walk(music_dir_path))[2]
-            count_files = len(files)
+                files = next(walk(music_dir_path))[2]
+                count_files = len(files)
 
-            if count_files:
-                dir_found = True
-                break
+                if count_files:
+                    dir_found = True
+                    break
 
-            else:
-                dirs = listdir(music_dir_path)
-                count_dirs = len(dirs)
-                number_dir = randint(0, count_dirs - 1)
-                dir = dirs[number_dir]
+                else:
+                    dirs = listdir(music_dir_path)
+                    count_dirs = len(dirs)
+                    number_dir = randint(0, count_dirs - 1)
+                    dir = dirs[number_dir]
 
-                start_path = music_dir_path
+                    start_path = music_dir_path
 
-        if not dir_found:
-            log.error("Directory have big deep: {}".format(music_dir_path))
+            if not dir_found:
+                log.error("Directory have big deep: {}".format(music_dir_path))
+                sleep(10)
+                continue
+
+            file_found = False
+
+            for i in range(5):
+                number_file = randint(0, count_files - 1)
+                file = files[number_file]
+
+                if (".mp3" in file) or (".flac" in file) or (".ape" in file):
+                    file_found = True
+                    break
+
+            if not file_found:
+                log.error("Directory don't have music files: {}".format(music_dir_path))
+                sleep(10)
+                continue
+
+            log.info(file)
+            music_file_path = path.join(music_dir_path, file)
+
+            log.info("Event set")
+            start_event.set()
+
+            log.info("Start play music")
+            call(["cvlc", music_file_path])
+
+            log.info("Cvlc killed")
+        else:
             sleep(10)
-            continue
-
-        file_found = False
-
-        for i in range(5):
-            number_file = randint(0, count_files - 1)
-            file = files[number_file]
-
-            if (".mp3" in file) or (".flac" in file) or (".ape" in file):
-                file_found = True
-                break
-
-        if not file_found:
-            log.error("Directory don't have music files: {}".format(music_dir_path))
-            sleep(10)
-            continue
-
-        log.info(file)
-        music_file_path = path.join(music_dir_path, file)
-
-        log.info("Event set")
-        start_event.set()
-
-        log.info("Start play music")
-        call(["cvlc", music_file_path])
-
-        log.info("Cvlc killed")
-    else:
-        sleep(10)
+    except Exception as e:
+        log.critical("!!!CRITICAL ERROR!!! {}".format(e))
+        sleep(60)
 
 log.info("Program stop\n")
