@@ -1,13 +1,13 @@
+import signal
 from datetime import datetime
 from subprocess import call
 from time import sleep
 from os import listdir, path, walk
 from threading import Thread, Event
 from random import randint
-import signal
 
 from logger import Logger
-
+from send_mail import send_mail
 
 __author__ = "Evgeny Goncharov"
 
@@ -119,7 +119,9 @@ while run_service.is_set():
         else:
             sleep(10)
     except Exception as e:
-        log.critical("!!!CRITICAL ERROR!!! {}".format(e))
+        message = "!!!CRITICAL ERROR!!! {}".format(e)
+        log.critical(message)
+        send_mail(message)
         sleep(60)
 
 log.info("Program stop\n")
