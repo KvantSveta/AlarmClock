@@ -7,7 +7,7 @@ __author__ = "Evgeny Goncharov"
 
 
 def send_mail(message):
-    with open("user.data", "r") as f:
+    with open("/home/pi/AlarmClock/user.data", "r") as f:
         json_data = f.read()
 
     json_data = json.loads(json_data)
