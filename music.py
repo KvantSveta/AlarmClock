@@ -21,7 +21,7 @@ run_service.set()
 
 def handler(signum, frame):
     run_service.clear()
-    log.info("Signal to stop service {}".format(signum))
+    log.debug("Signal to stop service {}".format(signum))
 
 
 signal.signal(signal.SIGTERM, handler)
@@ -29,22 +29,49 @@ signal.signal(signal.SIGTERM, handler)
 
 def stop_cvlc(start_event, run_service, log):
     while run_service.is_set():
-        log.info("Stop-thread wait")
+        log.debug("Stop-thread wait")
         start_event.wait()
 
-        log.info("Stop-thread sleep")
+        log.debug("Stop-thread sleep")
         for i in range(60):
             if run_service.is_set():
                 sleep(10)
 
-        log.info("Killing cvlc")
+        log.debug("Killing cvlc")
         call(["killall", "vlc"])
 
-        log.info("Stop-thread reset")
+        log.debug("Stop-thread reset")
         start_event.clear()
 
 
 Thread(target=stop_cvlc, args=(start_event, run_service, log)).start()
+
+
+def find_file(start_path, name_dir):
+    music_dir_path = path.join(start_path, name_dir)
+
+    _, sub_dirs, files = next(walk(music_dir_path))
+
+    count_sub_dirs = len(sub_dirs)
+    count_files = len(files)
+
+    if count_sub_dirs == 0 and count_files == 0:
+        return None
+
+    if 0 <= randint(0, count_sub_dirs + count_files - 1) < count_sub_dirs:
+        number_sub_dir = randint(0, count_sub_dirs - 1)
+        name_sub_dir = sub_dirs[number_sub_dir]
+
+        return find_file(music_dir_path, name_sub_dir)
+    else:
+        for i in range(5):
+            number_file = randint(0, count_files - 1)
+            file = files[number_file]
+
+            if (".mp3" in file) or (".flac" in file) or (".ape" in file):
+                return path.join(music_dir_path, file)
+
+        return None
 
 
 while run_service.is_set():
@@ -54,74 +81,33 @@ while run_service.is_set():
     hour = date.hour
     minute = date.minute
 
-    try:
-        if (hour == 5 and minute >= 30) or (6 <= hour < 22):
+    if (hour == 5 and minute >= 30) or (6 <= hour < 22):
+        try:
             dirs = listdir(start_path)
             count_dirs = len(dirs)
             number_dir = randint(0, count_dirs - 1)
-            dir = dirs[number_dir]
-            log.info(dir)
+            name_dir = dirs[number_dir]
 
-            music_dir_path = None
-            files = None
-            count_files = None
+            music_file_path = find_file(start_path, name_dir)
 
-            dir_found = False
+            if music_file_path:
+                log.info("Music name: {}".format(music_file_path))
 
-            for i in range(5):
-                music_dir_path = path.join(start_path, dir)
+                log.debug("Event set")
+                start_event.set()
 
-                files = next(walk(music_dir_path))[2]
-                count_files = len(files)
+                log.debug("Start play music")
+                call(["cvlc", music_file_path])
 
-                if count_files:
-                    dir_found = True
-                    break
+                log.debug("Cvlc killed")
 
-                else:
-                    dirs = listdir(music_dir_path)
-                    count_dirs = len(dirs)
-                    number_dir = randint(0, count_dirs - 1)
-                    dir = dirs[number_dir]
+        except Exception as e:
+            message = "!!!AlarmClock critical error!!! {}".format(e)
+            log.critical(message)
+            send_mail(message)
+            sleep(60)
 
-                    start_path = music_dir_path
-
-            if not dir_found:
-                log.error("Directory have big deep: {}".format(music_dir_path))
-                sleep(10)
-                continue
-
-            file_found = False
-
-            for i in range(5):
-                number_file = randint(0, count_files - 1)
-                file = files[number_file]
-
-                if (".mp3" in file) or (".flac" in file) or (".ape" in file):
-                    file_found = True
-                    break
-
-            if not file_found:
-                log.error("Directory don't have music files: {}".format(music_dir_path))
-                sleep(10)
-                continue
-
-            log.info(file)
-            music_file_path = path.join(music_dir_path, file)
-
-            log.info("Event set")
-            start_event.set()
-
-            log.info("Start play music")
-            call(["cvlc", music_file_path])
-
-            log.info("Cvlc killed")
-        else:
-            sleep(10)
-    except Exception as e:
-        message = "!!!CRITICAL ERROR!!! {}".format(e)
-        log.critical(message)
-        send_mail(message)
-        sleep(60)
+    else:
+        sleep(10)
 
 log.info("Program stop\n")
