@@ -55,23 +55,22 @@ def find_file(start_path, name_dir):
     count_sub_dirs = len(sub_dirs)
     count_files = len(files)
 
+    if count_files:
+        files = list(filter(
+            lambda f: (".mp3" in f) or (".flac" in f) or (".ape" in f),
+            files
+        ))
+        count_files = len(files)
+
     if count_sub_dirs == 0 and count_files == 0:
         return None
 
-    if 0 <= randint(0, count_sub_dirs + count_files - 1) < count_sub_dirs:
-        number_sub_dir = randint(0, count_sub_dirs - 1)
-        name_sub_dir = sub_dirs[number_sub_dir]
+    file_or_dir = randint(0, count_sub_dirs + count_files - 1)
 
-        return find_file(music_dir_path, name_sub_dir)
+    if file_or_dir < count_sub_dirs:
+        return find_file(music_dir_path, sub_dirs[file_or_dir])
     else:
-        for i in range(5):
-            number_file = randint(0, count_files - 1)
-            file = files[number_file]
-
-            if (".mp3" in file) or (".flac" in file) or (".ape" in file):
-                return path.join(music_dir_path, file)
-
-        return None
+        return path.join(music_dir_path, files[file_or_dir - count_sub_dirs])
 
 
 while run_service.is_set():
