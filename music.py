@@ -56,10 +56,7 @@ def find_file(start_path, name_dir):
     count_files = len(files)
 
     if count_files:
-        files = list(filter(
-            lambda f: (".mp3" in f) or (".flac" in f) or (".ape" in f),
-            files
-        ))
+        files = list(filter(lambda f: (".mp3" in f) or (".flac" in f), files))
         count_files = len(files)
 
     if count_sub_dirs == 0 and count_files == 0:
