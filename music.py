@@ -77,7 +77,7 @@ while run_service.is_set():
     hour = date.hour
     minute = date.minute
 
-    if (hour == 5 and minute >= 30) or (6 <= hour < 22):
+    if 6 <= hour < 22:
         try:
             dirs = listdir(start_path)
             count_dirs = len(dirs)
